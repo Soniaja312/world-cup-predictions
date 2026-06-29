@@ -285,16 +285,16 @@ export default function FriendsBracket() {
   }
 
   const leftCols  = [
-    { slotIds:[1,2,3,4,5,6,7,8],       label:'Round of 32'    },
-    { slotIds:[17,18,19,20],            label:'Round of 16'    },
-    { slotIds:[25,26],                  label:'Quarter-finals' },
-    { slotIds:[29],                     label:'Semi-finals'    },
+    { slotIds:[1,2,3,4,5,6,7,8],       label:'32s'   },
+    { slotIds:[17,18,19,20],            label:'16s'   },
+    { slotIds:[25,26],                  label:'Top 8' },
+    { slotIds:[29],                     label:'Top 4' },
   ]
   const rightCols = [
-    { slotIds:[30],                     label:'Semi-finals'    },
-    { slotIds:[27,28],                  label:'Quarter-finals' },
-    { slotIds:[21,22,23,24],            label:'Round of 16'    },
-    { slotIds:[9,10,11,12,13,14,15,16], label:'Round of 32'   },
+    { slotIds:[30],                     label:'Top 4' },
+    { slotIds:[27,28],                  label:'Top 8' },
+    { slotIds:[21,22,23,24],            label:'16s'   },
+    { slotIds:[9,10,11,12,13,14,15,16], label:'32s'   },
   ]
 
   return (
