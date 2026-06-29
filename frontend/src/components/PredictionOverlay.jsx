@@ -143,9 +143,25 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
   const [submitting, setSubmitting] = useState(false)
   const [submitError, setSubmitError] = useState(null)
 
+  const isLocked = (slotId) => bracketSlots[slotId]?.winner_id != null
+
   useEffect(() => {
     if (swiperRef.current) swiperRef.current.slideTo(matchIdx)
   }, [matchIdx])
+
+  // Auto-skip rounds where all games are already decided
+  useEffect(() => {
+    if (phase !== 'picking') return
+    const slots = (ROUND_SLOTS[ROUNDS[roundIdx]] ?? []).filter(id => !isLocked(id))
+    if (slots.length === 0) {
+      if (roundIdx < ROUNDS.length - 1) {
+        setRoundIdx(i => i + 1)
+        setMatchIdx(0)
+      } else {
+        setPhase('confirm')
+      }
+    }
+  }, [phase, roundIdx])
 
   function getMatchTeams(slotId) {
     // 3rd place: teams are the losers of the two semi-finals
@@ -183,12 +199,12 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
   }
 
   const currentRound = ROUNDS[roundIdx]
-  const currentSlots = ROUND_SLOTS[currentRound]
-  const currentSlotId = currentSlots?.[matchIdx]
+  const currentSlots = (ROUND_SLOTS[currentRound] ?? []).filter(id => !isLocked(id))
+  const currentSlotId = currentSlots[matchIdx]
   const currentPick = picks[currentSlotId]
   const { teamA, teamB } = getMatchTeams(currentSlotId)
   const isTBD = !teamA || !teamB
-  const isLastInRound = matchIdx === currentSlots?.length - 1
+  const isLastInRound = matchIdx === currentSlots.length - 1
   const canAdvance = !isTBD &&
     currentPick?.teamId &&
     currentPick?.scoreA !== '' && Number(currentPick?.scoreA) >= 0 &&
@@ -200,7 +216,13 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
   }
 
   function handleContinue() {
-    setRoundIdx(i => i + 1)
+    let nextIdx = roundIdx + 1
+    while (nextIdx < ROUNDS.length - 1) {
+      const slots = (ROUND_SLOTS[ROUNDS[nextIdx]] ?? []).filter(id => !isLocked(id))
+      if (slots.length > 0) break
+      nextIdx++
+    }
+    setRoundIdx(nextIdx)
     setMatchIdx(0)
     setPhase('picking')
   }
@@ -292,16 +314,7 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
 
           <div className="grid grid-cols-2 gap-3 mb-6">
             {nextSlots.map(slotId => {
-              let tA, tB
-              if (slotId === 32) {
-                // 3rd place summary: show the SF losers the user predicted
-                const { teamA, teamB } = getMatchTeams(32)
-                tA = teamA; tB = teamB
-              } else {
-                const [parentA, parentB] = PARENT_SLOTS[slotId] || []
-                tA = picks[parentA] ? teamsMap[picks[parentA].teamId] : null
-                tB = picks[parentB] ? teamsMap[picks[parentB].teamId] : null
-              }
+              const { teamA: tA, teamB: tB } = getMatchTeams(slotId)
               return (
                 <div key={slotId} className="bg-cream border border-navy/15 rounded-2xl p-3 text-center">
                   <div className="text-2xl">{tA?.flag_emoji ?? '🏳️'}</div>
