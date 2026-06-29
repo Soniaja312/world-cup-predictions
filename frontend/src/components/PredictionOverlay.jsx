@@ -38,9 +38,17 @@ const PARENT_SLOTS = {
   31:[29,30],
 }
 
-function MatchCard({ slotId, round, teamA, teamB, pick, onPick, onScoreChange }) {
+function MatchCard({ slotId, round, teamA, teamB, pick, onPick, onScoreChange, onPenaltiesChange }) {
   const isFinal = round === 'F'
   const isTBD = !teamA || !teamB
+
+  const sA = parseInt(pick?.scoreA)
+  const sB = parseInt(pick?.scoreB)
+  const scoresEntered = pick?.scoreA !== '' && pick?.scoreB !== '' && !isNaN(sA) && !isNaN(sB)
+  const isTied = scoresEntered && sA === sB
+  const pickedIsA = pick?.teamId === teamA?.id
+  const pickedWins = scoresEntered && !isTied && (pickedIsA ? sA > sB : sB > sA)
+  const pickedLoses = scoresEntered && !isTied && !pickedWins && pick?.teamId
 
   return (
     <div className={`h-full rounded-3xl p-5 flex flex-col ${
@@ -123,6 +131,25 @@ function MatchCard({ slotId, round, teamA, teamB, pick, onPick, onScoreChange })
                 </div>
               )).reduce((acc, el, i) => i === 0 ? [el] : [...acc, <span key="sep" className={`text-lg font-bold mt-4 ${isFinal ? 'text-lime/60' : 'text-navy/30'}`}>–</span>, el], [])}
             </div>
+
+            {pickedLoses && (
+              <p className={`text-xs text-center mt-2 font-medium ${isFinal ? 'text-red-400' : 'text-red-500'}`}>
+                Score must show {pickedIsA ? teamA?.name : teamB?.name} winning
+              </p>
+            )}
+
+            {isTied && (
+              <button
+                onClick={onPenaltiesChange}
+                className={`w-full mt-2 py-2 rounded-xl text-xs font-bold border-2 transition-all ${
+                  pick?.penalties
+                    ? isFinal ? 'bg-lime border-lime text-navy' : 'bg-navy border-navy text-cream'
+                    : isFinal ? 'border-lime/40 text-lime/70 hover:border-lime hover:text-lime' : 'border-navy/30 text-navy/60 hover:border-navy hover:text-navy'
+                }`}
+              >
+                {pick?.penalties ? '✓ Win on penalties' : 'Win on penalties?'}
+              </button>
+            )}
           </motion.div>
         )}
       </AnimatePresence>
@@ -205,10 +232,16 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
   const { teamA, teamB } = getMatchTeams(currentSlotId)
   const isTBD = !teamA || !teamB
   const isLastInRound = matchIdx === currentSlots.length - 1
+  const _sA = parseInt(currentPick?.scoreA)
+  const _sB = parseInt(currentPick?.scoreB)
+  const _scoresEntered = currentPick?.scoreA !== '' && currentPick?.scoreB !== '' && _sA >= 0 && _sB >= 0
+  const _tied = _scoresEntered && _sA === _sB
+  const _pickedIsA = currentPick?.teamId === teamA?.id
+  const _pickedWins = _scoresEntered && !_tied && (_pickedIsA ? _sA > _sB : _sB > _sA)
   const canAdvance = !isTBD &&
     currentPick?.teamId &&
-    currentPick?.scoreA !== '' && Number(currentPick?.scoreA) >= 0 &&
-    currentPick?.scoreB !== '' && Number(currentPick?.scoreB) >= 0
+    _scoresEntered &&
+    (_pickedWins || (_tied && currentPick?.penalties))
 
   function handleNext() {
     if (isLastInRound) setPhase(currentRound === 'F' ? 'confirm' : 'summary')
@@ -441,11 +474,15 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
                   pick={picks[slotId]}
                   onPick={teamId => setPicks(prev => ({
                     ...prev,
-                    [slotId]: { teamId, scoreA: prev[slotId]?.scoreA ?? '', scoreB: prev[slotId]?.scoreB ?? '' }
+                    [slotId]: { teamId, scoreA: prev[slotId]?.scoreA ?? '', scoreB: prev[slotId]?.scoreB ?? '', penalties: false }
                   }))}
                   onScoreChange={(field, val) => setPicks(prev => ({
                     ...prev,
-                    [slotId]: { ...prev[slotId], [field]: val }
+                    [slotId]: { ...prev[slotId], [field]: val, penalties: false }
+                  }))}
+                  onPenaltiesChange={() => setPicks(prev => ({
+                    ...prev,
+                    [slotId]: { ...prev[slotId], penalties: !prev[slotId]?.penalties }
                   }))}
                 />
               </SwiperSlide>
