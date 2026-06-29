@@ -217,12 +217,29 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
 
     const slot = bracketSlots[slotId]
     if (!slot) return { teamA: null, teamB: null }
+
+    // R32 slots have embedded team objects from buildOverlayMaps
     if (slot.team_a || slot.team_b) return { teamA: slot.team_a, teamB: slot.team_b }
-    const [parentA, parentB] = PARENT_SLOTS[slotId] || []
-    return {
-      teamA: parentA && picks[parentA] ? teamsMap[picks[parentA].teamId] : null,
-      teamB: parentB && picks[parentB] ? teamsMap[picks[parentB].teamId] : null,
+
+    // R16+ slots may have team_a_id/team_b_id set by admin result propagation
+    if (slot.team_a_id || slot.team_b_id) {
+      return {
+        teamA: slot.team_a_id ? teamsMap[slot.team_a_id] ?? null : null,
+        teamB: slot.team_b_id ? teamsMap[slot.team_b_id] ?? null : null,
+      }
     }
+
+    // Fallback: derive from parent picks — but if a parent is locked use its actual winner
+    const [parentA, parentB] = PARENT_SLOTS[slotId] || []
+    function teamFromParent(parentId) {
+      if (!parentId) return null
+      if (isLocked(parentId)) {
+        const winnerId = bracketSlots[parentId]?.winner_id
+        return winnerId != null ? teamsMap[winnerId] ?? null : null
+      }
+      return picks[parentId] ? teamsMap[picks[parentId].teamId] ?? null : null
+    }
+    return { teamA: teamFromParent(parentA), teamB: teamFromParent(parentB) }
   }
 
   const currentRound = ROUNDS[roundIdx]
