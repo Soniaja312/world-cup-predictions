@@ -255,7 +255,7 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
             <li className="flex gap-2"><span className="text-navy font-bold shrink-0">→</span><span>You can only submit predictions <strong className="text-navy">once</strong> — they cannot be changed.</span></li>
             <li className="flex gap-2"><span className="text-navy font-bold shrink-0">→</span><span>You must predict <strong className="text-navy">all the way to the Final</strong>, including a champion.</span></li>
             <li className="flex gap-2"><span className="text-navy font-bold shrink-0">→</span><span>Pick the winning team for <strong className="text-navy">2 points</strong>.</span></li>
-            <li className="flex gap-2"><span className="text-navy font-bold shrink-0">→</span><span>Guess the exact score for a <strong className="text-navy">bonus 3 points</strong>.</span></li>
+            <li className="flex gap-2"><span className="text-navy font-bold shrink-0">→</span><span>Guess the exact score for a <strong className="text-navy">bonus 4 points</strong>.</span></li>
           </ul>
           <button
             onClick={() => setPhase('picking')}

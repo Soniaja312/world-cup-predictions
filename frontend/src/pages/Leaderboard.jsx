@@ -55,7 +55,7 @@ export default function Leaderboard() {
         userScores[p.user_id].correct += 1
       }
       if (exactScore) {
-        userScores[p.user_id].points += 3
+        userScores[p.user_id].points += 4
         userScores[p.user_id].exact  += 1
       }
     })
@@ -97,7 +97,7 @@ export default function Leaderboard() {
             <span className="text-cream/40 text-xs">correct winner</span>
           </div>
           <div className="flex items-center gap-2 px-3 py-2 rounded-lg" style={{ background: 'rgba(223,242,99,0.08)', border: '1px solid rgba(223,242,99,0.15)' }}>
-            <span className="text-lime font-extrabold text-sm">+3</span>
+            <span className="text-lime font-extrabold text-sm">+4</span>
             <span className="text-cream/40 text-xs">exact score</span>
           </div>
         </div>
