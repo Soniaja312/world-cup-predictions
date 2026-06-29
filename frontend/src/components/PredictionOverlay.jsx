@@ -221,17 +221,10 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
     // R32 slots have embedded team objects from buildOverlayMaps
     if (slot.team_a || slot.team_b) return { teamA: slot.team_a, teamB: slot.team_b }
 
-    // R16+ slots may have team_a_id/team_b_id set by admin result propagation
-    if (slot.team_a_id || slot.team_b_id) {
-      return {
-        teamA: slot.team_a_id ? teamsMap[slot.team_a_id] ?? null : null,
-        teamB: slot.team_b_id ? teamsMap[slot.team_b_id] ?? null : null,
-      }
-    }
-
-    // Fallback: derive from parent picks — but if a parent is locked use its actual winner
+    // For each side: use DB team ID if already set, else locked parent winner, else user pick
     const [parentA, parentB] = PARENT_SLOTS[slotId] || []
-    function teamFromParent(parentId) {
+    function resolveTeam(teamId, parentId) {
+      if (teamId) return teamsMap[teamId] ?? null
       if (!parentId) return null
       if (isLocked(parentId)) {
         const winnerId = bracketSlots[parentId]?.winner_id
@@ -239,7 +232,10 @@ export default function PredictionOverlay({ bracketSlots, teamsMap, onClose, onS
       }
       return picks[parentId] ? teamsMap[picks[parentId].teamId] ?? null : null
     }
-    return { teamA: teamFromParent(parentA), teamB: teamFromParent(parentB) }
+    return {
+      teamA: resolveTeam(slot.team_a_id, parentA),
+      teamB: resolveTeam(slot.team_b_id, parentB),
+    }
   }
 
   const currentRound = ROUNDS[roundIdx]
