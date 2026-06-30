@@ -43,12 +43,13 @@ export default function Admin() {
   const { user, loading } = useAuth()
   const navigate = useNavigate()
 
-  const [slotMap, setSlotMap] = useState({})
-  const [editing, setEditing] = useState(null) // slotId being edited
-  const [scoreA, setScoreA]   = useState('')
-  const [scoreB, setScoreB]   = useState('')
-  const [saving, setSaving]   = useState(false)
-  const [saved, setSaved]     = useState(null)  // slotId just saved
+  const [slotMap, setSlotMap]   = useState({})
+  const [editing, setEditing]   = useState(null)
+  const [scoreA, setScoreA]     = useState('')
+  const [scoreB, setScoreB]     = useState('')
+  const [penSide, setPenSide]   = useState(null) // 'a' | 'b' | null
+  const [saving, setSaving]     = useState(false)
+  const [saved, setSaved]       = useState(null)
 
   useEffect(() => {
     if (loading) return
@@ -81,10 +82,11 @@ export default function Admin() {
 
   function openEdit(slotId) {
     const slot = slotMap[slotId]
-    if (!slot?.team_a || !slot?.team_b) return // can't edit until both teams are known
+    if (!slot?.team_a || !slot?.team_b) return
     setEditing(slotId)
     setScoreA(slot.score_a ?? '')
     setScoreB(slot.score_b ?? '')
+    setPenSide(null)
   }
 
   async function save() {
@@ -92,10 +94,16 @@ export default function Admin() {
     const a = parseInt(scoreA, 10)
     const b = parseInt(scoreB, 10)
     if (isNaN(a) || isNaN(b) || a < 0 || b < 0) return
+    const isTied = a === b
+    if (isTied && !penSide) return // must select penalty winner
 
     setSaving(true)
     const slot = slotMap[editing]
-    const winnerId = a > b ? slot.team_a.id : b > a ? slot.team_b.id : null
+    const winnerId = a > b
+      ? slot.team_a.id
+      : b > a
+      ? slot.team_b.id
+      : penSide === 'a' ? slot.team_a.id : slot.team_b.id
 
     // 1. Update the current slot result
     await supabase.from('bracket_slots').update({
@@ -252,7 +260,7 @@ export default function Admin() {
                               </button>
                               <button
                                 onClick={save}
-                                disabled={saving || scoreA === '' || scoreB === ''}
+                                disabled={saving || scoreA === '' || scoreB === '' || (parseInt(scoreA) === parseInt(scoreB) && !penSide)}
                                 className="text-xs font-bold uppercase tracking-wider px-4 py-1.5 rounded-lg transition-all disabled:opacity-40"
                                 style={{ background: '#DFF263', color: '#1e3d57' }}
                               >
@@ -261,7 +269,25 @@ export default function Admin() {
                             </div>
                           </div>
                           {scoreA !== '' && scoreB !== '' && parseInt(scoreA) === parseInt(scoreB) && (
-                            <p className="text-rust text-xs mt-2">Scores are tied — no winner will be set. Edit if needed.</p>
+                            <div className="mt-3">
+                              <p className="text-cream/50 text-xs mb-2">Tied — who won on penalties?</p>
+                              <div className="flex gap-2">
+                                <button
+                                  onClick={() => setPenSide('a')}
+                                  className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                  style={{ background: penSide === 'a' ? '#DFF263' : 'rgba(253,246,232,0.1)', color: penSide === 'a' ? '#1e3d57' : 'rgba(253,246,232,0.5)' }}
+                                >
+                                  {teamA?.flag_emoji} {teamA?.name}
+                                </button>
+                                <button
+                                  onClick={() => setPenSide('b')}
+                                  className="flex-1 py-1.5 rounded-lg text-xs font-bold transition-all"
+                                  style={{ background: penSide === 'b' ? '#DFF263' : 'rgba(253,246,232,0.1)', color: penSide === 'b' ? '#1e3d57' : 'rgba(253,246,232,0.5)' }}
+                                >
+                                  {teamB?.flag_emoji} {teamB?.name}
+                                </button>
+                              </div>
+                            </div>
                           )}
                         </div>
                       )}
